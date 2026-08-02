@@ -1,4 +1,4 @@
-print("THIS IS MY CURRENT FILE")
+import random
 import pygame
 
 # -----------------------------
@@ -56,6 +56,18 @@ while running:
     # Fill the background with space color
     screen.fill(SPACE)
 
+    # Draw random stars
+    for i in range(200):
+        star_x = random.randint(0, WIDTH)
+        star_y = random.randint(0, HEIGHT)
+
+        pygame.draw.circle(
+            screen,
+            (255, 255, 255),
+            (star_x, star_y),
+            2
+        )
+
     # Draw Earth
     pygame.draw.circle(
         screen,
@@ -65,14 +77,14 @@ while running:
     )
 
     # Draw Satellite
-    pygame.draw.rect(
-    screen,
-    (255, 0, 0),
-    (640, 340, 40, 40)
-)
+    pygame.draw.circle(
+        screen,
+        SATELLITE_RED,
+        (satellite_x, satellite_y),
+        SATELLITE_RADIUS
+    )
 
     # Update the display
     pygame.display.flip()
 
-# Quit Pygame
 pygame.quit()
