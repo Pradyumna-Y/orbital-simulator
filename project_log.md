@@ -33,3 +33,18 @@ Draw Earth in the center of the screen.
 
 ### Engineering Reflection
 This update did not visibly change the simulator, but it greatly improved its structure. The satellite now has a defined position, which will allow future lessons to introduce velocity, acceleration, and gravity without rewriting the drawing code.
+
+## Phase 2.4 – Labels & HUD Foundation
+
+### What I Built
+- Added text labels for Earth and the satellite using Pygame's font rendering system.
+- Positioned labels below their corresponding objects.
+- Preserved the existing rendering pipeline and project structure.
+
+### What I Learned
+- Pygame renders text using Font objects and text surfaces.
+- Rendering text follows the same draw-update cycle as graphical objects.
+- Labels are the first step toward building a telemetry interface for the simulator.
+
+### Engineering Reflection
+Although the labels are simple, they establish the foundation for a future heads-up display (HUD). This system will later display engineering data such as velocity, altitude, orbital period, simulation time, and frame rate, similar to professional aerospace visualization software.
