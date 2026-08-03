@@ -24,6 +24,13 @@ WIDTH = 1000
 HEIGHT = 700
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+# A Clock object helps control how often the simulation updates.
+clock = pygame.time.Clock()
+
+# FPS means frames per second. Limiting FPS keeps simulation speed consistent.
+FPS = 60
+
 pygame.display.set_caption("Operation Aerospace 2026")
 
 # -----------------------------
@@ -46,6 +53,10 @@ earth_y = HEIGHT // 2
 # -----------------------------
 SATELLITE_RADIUS = 30
 SATELLITE_DISTANCE = 150
+
+# Velocity changes the satellite position every frame.
+satellite_velocity_x = 120
+satellite_velocity_y = 0
 
 satellite_x = earth_x + SATELLITE_DISTANCE
 satellite_y = earth_y
@@ -106,5 +117,13 @@ while running:
 
     # Update the display
     pygame.display.flip()
+
+    # Delta time is the time that passed since the previous frame.
+    # clock.tick returns milliseconds, so dividing by 1000 converts it to seconds.
+    dt = clock.tick(FPS) / 1000
+
+    # Multiplying velocity by dt makes movement independent of the frame rate.
+    satellite_x += satellite_velocity_x * dt
+    satellite_y += satellite_velocity_y * dt
 
 pygame.quit()
