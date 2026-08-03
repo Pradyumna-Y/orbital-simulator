@@ -1,10 +1,21 @@
-import random
 import pygame
+from stars import STAR_COORDINATES
 
 # -----------------------------
 # Initialize Pygame
 # -----------------------------
 pygame.init()
+
+# -----------------------------
+# Font Setup
+# -----------------------------
+font = pygame.font.SysFont(None, 28)
+
+# -----------------------------
+# Text Rendering
+# -----------------------------
+earth_label = font.render("Earth", True, (255, 255, 255))
+satellite_label = font.render("Satellite", True, (255, 255, 255))
 
 # -----------------------------
 # Window Settings
@@ -43,20 +54,6 @@ print(satellite_x)
 print(satellite_y)
 
 # -----------------------------
-# Star Field
-# -----------------------------
-NUMBER_OF_STARS = 200
-
-stars = []
-
-for i in range(NUMBER_OF_STARS):
-
-    star_x = random.randint(0, WIDTH)
-    star_y = random.randint(0, HEIGHT)
-
-    stars.append((star_x, star_y))
-
-# -----------------------------
 # Main Game Loop
 # -----------------------------
 running = True
@@ -72,7 +69,7 @@ while running:
     screen.fill(SPACE)
 
     # Draw random stars
-    for star in stars:
+    for star in STAR_COORDINATES:
 
         pygame.draw.circle(
             screen,
@@ -95,6 +92,16 @@ while running:
         SATELLITE_RED,
         (satellite_x, satellite_y),
         SATELLITE_RADIUS
+    )
+
+    # Draw labels below Earth and the satellite
+    screen.blit(
+        earth_label,
+        (earth_x - earth_label.get_width() // 2, earth_y + EARTH_RADIUS + 10)
+    )
+    screen.blit(
+        satellite_label,
+        (satellite_x - satellite_label.get_width() // 2, satellite_y + SATELLITE_RADIUS + 10)
     )
 
     # Update the display
