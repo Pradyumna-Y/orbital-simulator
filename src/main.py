@@ -41,6 +41,21 @@ satellite_y = earth_y
 
 print(satellite_x)
 print(satellite_y)
+
+# -----------------------------
+# Star Field
+# -----------------------------
+NUMBER_OF_STARS = 200
+
+stars = []
+
+for i in range(NUMBER_OF_STARS):
+
+    star_x = random.randint(0, WIDTH)
+    star_y = random.randint(0, HEIGHT)
+
+    stars.append((star_x, star_y))
+
 # -----------------------------
 # Main Game Loop
 # -----------------------------
@@ -57,16 +72,14 @@ while running:
     screen.fill(SPACE)
 
     # Draw random stars
-    for i in range(200):
-        star_x = random.randint(0, WIDTH)
-        star_y = random.randint(0, HEIGHT)
+    for star in stars:
 
         pygame.draw.circle(
             screen,
-            (255, 255, 255),
-            (star_x, star_y),
+            (255,255,255),
+            star,
             2
-        )
+    )
 
     # Draw Earth
     pygame.draw.circle(
