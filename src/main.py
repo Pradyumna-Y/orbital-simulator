@@ -12,6 +12,7 @@ from constants import (
     WIDTH,
 )
 from stars import STAR_COORDINATES
+from renderer import draw_earth, draw_labels, draw_satellite, draw_stars
 
 # -----------------------------
 # Initialize Pygame
@@ -78,51 +79,37 @@ while running:
     # -----------------------------
     # Draw Star Field
     # -----------------------------
-    for star in STAR_COORDINATES:
-        pygame.draw.circle(
-            screen,
-            WHITE,
-            star,
-            2
-        )
+    draw_stars(screen, STAR_COORDINATES, WHITE)
 
     # -----------------------------
     # Draw Earth
     # -----------------------------
-    pygame.draw.circle(
-        screen,
-        EARTH_BLUE,
-        (earth_x, earth_y),
-        EARTH_RADIUS
-    )
+    draw_earth(screen, earth_x, earth_y, EARTH_RADIUS, EARTH_BLUE)
 
     # -----------------------------
     # Draw Satellite
     # -----------------------------
-    pygame.draw.circle(
+    draw_satellite(
         screen,
+        satellite_x,
+        satellite_y,
+        SATELLITE_RADIUS,
         SATELLITE_RED,
-        (satellite_x, satellite_y),
-        SATELLITE_RADIUS
     )
 
     # -----------------------------
     # Draw Labels
     # -----------------------------
-    screen.blit(
+    draw_labels(
+        screen,
         earth_label,
-        (
-            earth_x - earth_label.get_width() // 2,
-            earth_y + EARTH_RADIUS + 10
-        )
-    )
-
-    screen.blit(
         satellite_label,
-        (
-            satellite_x - satellite_label.get_width() // 2,
-            satellite_y + SATELLITE_RADIUS + 10
-        )
+        earth_x,
+        earth_y,
+        EARTH_RADIUS,
+        satellite_x,
+        satellite_y,
+        SATELLITE_RADIUS,
     )
 
     # -----------------------------
