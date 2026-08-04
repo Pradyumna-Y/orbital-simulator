@@ -1,4 +1,16 @@
 import pygame
+from constants import (
+    EARTH_BLUE,
+    EARTH_RADIUS,
+    FPS,
+    HEIGHT,
+    SATELLITE_DISTANCE,
+    SATELLITE_RADIUS,
+    SATELLITE_RED,
+    SPACE,
+    WHITE,
+    WIDTH,
+)
 from stars import STAR_COORDINATES
 
 # -----------------------------
@@ -14,15 +26,12 @@ font = pygame.font.SysFont(None, 28)
 # -----------------------------
 # Text Rendering
 # -----------------------------
-earth_label = font.render("Earth", True, (255, 255, 255))
-satellite_label = font.render("Satellite", True, (255, 255, 255))
+earth_label = font.render("Earth", True, WHITE)
+satellite_label = font.render("Satellite", True, WHITE)
 
 # -----------------------------
 # Window Settings
 # -----------------------------
-WIDTH = 1000
-HEIGHT = 700
-
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Operation Aerospace 2026")
 
@@ -31,31 +40,15 @@ pygame.display.set_caption("Operation Aerospace 2026")
 # -----------------------------
 clock = pygame.time.Clock()
 
-# Frames Per Second
-FPS = 60
-
-# -----------------------------
-# Colors
-# -----------------------------
-SPACE = (15, 15, 30)
-EARTH_BLUE = (50, 120, 255)
-SATELLITE_RED = (255, 0, 0)
-WHITE = (255, 255, 255)
-
 # -----------------------------
 # Earth Properties
 # -----------------------------
-EARTH_RADIUS = 60
-
 earth_x = WIDTH // 2
 earth_y = HEIGHT // 2
 
 # -----------------------------
 # Satellite Properties
 # -----------------------------
-SATELLITE_RADIUS = 30
-SATELLITE_DISTANCE = 150
-
 # Velocity is measured in pixels per second.
 satellite_velocity_x = 120
 satellite_velocity_y = 0
