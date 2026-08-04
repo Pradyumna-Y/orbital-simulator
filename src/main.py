@@ -13,6 +13,7 @@ from constants import (
 )
 from stars import STAR_COORDINATES
 from renderer import draw_earth, draw_labels, draw_satellite, draw_stars
+from simulation import update_satellite
 
 # -----------------------------
 # Initialize Pygame
@@ -127,10 +128,13 @@ while running:
     # -----------------------------
     # Update Satellite Position
     # -----------------------------
-    # Multiplying velocity by delta time keeps movement
-    # consistent even if the frame rate changes.
-    satellite_x += satellite_velocity_x * dt
-    satellite_y += satellite_velocity_y * dt
+    satellite_x, satellite_y = update_satellite(
+        satellite_x,
+        satellite_y,
+        satellite_velocity_x,
+        satellite_velocity_y,
+        dt,
+    )
 
 # -----------------------------
 # Shut Down Pygame
