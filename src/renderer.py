@@ -43,3 +43,9 @@ def draw_labels(
             satellite_y + satellite_radius + 10,
         ),
     )
+
+
+def draw_distance(screen, distance, font, color):
+    """Draw the Earth-to-satellite distance in the upper-left corner."""
+    distance_text = font.render(f"Distance: {distance:.2f} px", True, color)
+    screen.blit(distance_text, (20, 20))

@@ -12,8 +12,8 @@ from constants import (
     WIDTH,
 )
 from stars import STAR_COORDINATES
-from renderer import draw_earth, draw_labels, draw_satellite, draw_stars
-from simulation import update_satellite
+from renderer import draw_distance, draw_earth, draw_labels, draw_satellite, draw_stars
+from simulation import calculate_distance, update_satellite
 
 # -----------------------------
 # Initialize Pygame
@@ -73,6 +73,11 @@ while running:
             running = False
 
     # -----------------------------
+    # Calculate Earth-Satellite Distance
+    # -----------------------------
+    distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
+
+    # -----------------------------
     # Clear Screen
     # -----------------------------
     screen.fill(SPACE)
@@ -112,6 +117,11 @@ while running:
         satellite_y,
         SATELLITE_RADIUS,
     )
+
+    # -----------------------------
+    # Draw Distance Telemetry
+    # -----------------------------
+    draw_distance(screen, distance, font, WHITE)
 
     # -----------------------------
     # Update Display
