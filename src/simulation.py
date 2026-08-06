@@ -67,3 +67,15 @@ def calculate_gravity(distance):
     gravity = GRAVITY_STRENGTH / (distance ** 2)
 
     return gravity
+
+
+def calculate_orbital_velocity(distance):
+    """Calculate the theoretical circular orbital velocity at a distance."""
+    # A zero distance avoids division by zero.
+    if distance == 0:
+        return 0
+
+    # This equation comes from balancing gravity with centripetal acceleration.
+    orbital_velocity = math.sqrt(GRAVITY_STRENGTH / distance)
+
+    return orbital_velocity

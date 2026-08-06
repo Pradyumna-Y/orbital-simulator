@@ -19,6 +19,7 @@ from renderer import (
     draw_earth,
     draw_gravity,
     draw_labels,
+    draw_orbital_velocity,
     draw_satellite,
     draw_stars,
     draw_velocity,
@@ -27,6 +28,7 @@ from simulation import (
     calculate_direction,
     calculate_distance,
     calculate_gravity,
+    calculate_orbital_velocity,
     update_satellite,
 )
 
@@ -66,12 +68,17 @@ earth_y = HEIGHT // 2
 # -----------------------------
 # Satellite Properties
 # -----------------------------
-# Velocity is measured in pixels per second.
-satellite_velocity_x = 120
-satellite_velocity_y = 0
-
 satellite_x = earth_x + SATELLITE_DISTANCE
 satellite_y = earth_y
+
+# Calculate the orbital speed from the satellite's initial distance from Earth.
+initial_distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
+initial_orbital_velocity = calculate_orbital_velocity(initial_distance)
+
+# Orbital velocity is perpendicular to the radius, so the satellite starts upward.
+# This creates a counterclockwise orbit from a starting point right of Earth.
+satellite_velocity_x = 0
+satellite_velocity_y = -initial_orbital_velocity
 
 # -----------------------------
 # Main Game Loop
@@ -106,6 +113,9 @@ while running:
     # Calculate Simplified Gravity
     # -----------------------------
     gravity = calculate_gravity(distance)
+
+    # Calculate the circular-orbit speed for HUD telemetry only.
+    orbital_velocity = calculate_orbital_velocity(distance)
 
     # -----------------------------
     # Calculate Gravitational Acceleration
@@ -170,6 +180,7 @@ while running:
         WHITE,
     )
     draw_gravity(screen, gravity, font, WHITE)
+    draw_orbital_velocity(screen, orbital_velocity, font, WHITE)
 
     # -----------------------------
     # Update Display

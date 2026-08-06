@@ -85,3 +85,11 @@ def draw_gravity(screen, gravity, font, color):
     gravity_value = font.render(f"{gravity:.4f}", True, color)
     screen.blit(gravity_label, (20, 265))
     screen.blit(gravity_value, (20, 300))
+
+
+def draw_orbital_velocity(screen, orbital_velocity, font, color):
+    """Draw the theoretical circular orbital velocity below gravity."""
+    orbital_velocity_text = font.render(
+        f"Orbital Velocity: {orbital_velocity:.2f} px/s", True, color
+    )
+    screen.blit(orbital_velocity_text, (20, 335))
