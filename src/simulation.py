@@ -27,3 +27,23 @@ def calculate_distance(earth_x, earth_y, satellite_x, satellite_y):
     distance = math.sqrt(dx ** 2 + dy ** 2)
 
     return distance
+
+
+def calculate_direction(earth_x, earth_y, satellite_x, satellite_y):
+    """Calculate the unit direction from Earth to the satellite."""
+    # dx and dy describe the direction from Earth toward the satellite.
+    dx = satellite_x - earth_x
+    dy = satellite_y - earth_y
+
+    # Reuse the distance calculation to normalize the direction values.
+    distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
+
+    # A zero distance has no direction, and this avoids division by zero.
+    if distance == 0:
+        return 0.0, 0.0
+
+    # Dividing by distance creates a unit vector with a length of one.
+    unit_x = dx / distance
+    unit_y = dy / distance
+
+    return unit_x, unit_y

@@ -49,3 +49,11 @@ def draw_distance(screen, distance, font, color):
     """Draw the Earth-to-satellite distance in the upper-left corner."""
     distance_text = font.render(f"Distance: {distance:.2f} px", True, color)
     screen.blit(distance_text, (20, 20))
+
+
+def draw_direction(screen, direction_x, direction_y, font, color):
+    """Draw the Earth-to-satellite direction values below the distance."""
+    direction_x_text = font.render(f"Direction X: {direction_x:.3f}", True, color)
+    direction_y_text = font.render(f"Direction Y: {direction_y:.3f}", True, color)
+    screen.blit(direction_x_text, (20, 55))
+    screen.blit(direction_y_text, (20, 90))
