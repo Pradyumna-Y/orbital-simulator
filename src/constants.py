@@ -10,7 +10,7 @@ HEIGHT = 700
 FPS = 60
 
 # Scaled simulation constant used for the simplified gravity model.
-GRAVITY_STRENGTH = 50000
+GRAVITY_STRENGTH = 100000
 
 # -----------------------------
 # Colors

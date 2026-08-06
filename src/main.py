@@ -92,8 +92,6 @@ while running:
     # -----------------------------
     distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
 
-    gravity = calculate_gravity(distance)
-
     # -----------------------------
     # Calculate Earth-Satellite Direction
     # -----------------------------
@@ -103,6 +101,11 @@ while running:
         satellite_x,
         satellite_y,
     )
+
+    # -----------------------------
+    # Calculate Simplified Gravity
+    # -----------------------------
+    gravity = calculate_gravity(distance)
 
     # -----------------------------
     # Calculate Gravitational Acceleration
