@@ -1,20 +1,28 @@
 import math
 
+from constants import GRAVITY_STRENGTH
+
 
 def update_satellite(
     satellite_x,
     satellite_y,
     satellite_velocity_x,
     satellite_velocity_y,
+    satellite_acceleration_x,
+    satellite_acceleration_y,
     dt,
 ):
-    """Update the satellite position using velocity and delta time."""
-    # Multiplying velocity by delta time keeps movement
+    """Update the satellite velocity and position using acceleration and time."""
+    # Acceleration changes velocity over time.
+    satellite_velocity_x += satellite_acceleration_x * dt
+    satellite_velocity_y += satellite_acceleration_y * dt
+
+    # Multiplying velocity by delta time changes position and keeps movement
     # consistent even if the frame rate changes.
     satellite_x += satellite_velocity_x * dt
     satellite_y += satellite_velocity_y * dt
 
-    return satellite_x, satellite_y
+    return satellite_x, satellite_y, satellite_velocity_x, satellite_velocity_y
 
 
 def calculate_distance(earth_x, earth_y, satellite_x, satellite_y):
@@ -47,3 +55,15 @@ def calculate_direction(earth_x, earth_y, satellite_x, satellite_y):
     unit_y = dy / distance
 
     return unit_x, unit_y
+
+
+def calculate_gravity(distance):
+    """Calculate simplified gravity magnitude using inverse-square distance."""
+    # A zero distance avoids division by zero.
+    if distance == 0:
+        return 0
+
+    # Gravity becomes weaker as the square of distance becomes larger.
+    gravity = GRAVITY_STRENGTH / (distance ** 2)
+
+    return gravity

@@ -57,3 +57,31 @@ def draw_direction(screen, direction_x, direction_y, font, color):
     direction_y_text = font.render(f"Direction Y: {direction_y:.3f}", True, color)
     screen.blit(direction_x_text, (20, 55))
     screen.blit(direction_y_text, (20, 90))
+
+
+def draw_velocity(screen, velocity_x, velocity_y, font, color):
+    """Draw the satellite velocity values below the direction telemetry."""
+    velocity_x_text = font.render(f"Velocity X: {velocity_x:.2f}", True, color)
+    velocity_y_text = font.render(f"Velocity Y: {velocity_y:.2f}", True, color)
+    screen.blit(velocity_x_text, (20, 125))
+    screen.blit(velocity_y_text, (20, 160))
+
+
+def draw_acceleration(screen, acceleration_x, acceleration_y, font, color):
+    """Draw the satellite acceleration values below the velocity telemetry."""
+    acceleration_x_text = font.render(
+        f"Acceleration X: {acceleration_x:.2f}", True, color
+    )
+    acceleration_y_text = font.render(
+        f"Acceleration Y: {acceleration_y:.2f}", True, color
+    )
+    screen.blit(acceleration_x_text, (20, 195))
+    screen.blit(acceleration_y_text, (20, 230))
+
+
+def draw_gravity(screen, gravity, font, color):
+    """Draw the simplified gravity value below the acceleration telemetry."""
+    gravity_label = font.render("Gravity:", True, color)
+    gravity_value = font.render(f"{gravity:.4f}", True, color)
+    screen.blit(gravity_label, (20, 265))
+    screen.blit(gravity_value, (20, 300))

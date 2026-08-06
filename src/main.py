@@ -13,14 +13,22 @@ from constants import (
 )
 from stars import STAR_COORDINATES
 from renderer import (
+    draw_acceleration,
     draw_direction,
     draw_distance,
     draw_earth,
+    draw_gravity,
     draw_labels,
     draw_satellite,
     draw_stars,
+    draw_velocity,
 )
-from simulation import calculate_direction, calculate_distance, update_satellite
+from simulation import (
+    calculate_direction,
+    calculate_distance,
+    calculate_gravity,
+    update_satellite,
+)
 
 # -----------------------------
 # Initialize Pygame
@@ -62,6 +70,10 @@ earth_y = HEIGHT // 2
 satellite_velocity_x = 120
 satellite_velocity_y = 0
 
+# Acceleration is measured in pixels per second squared.
+satellite_acceleration_x = 0
+satellite_acceleration_y = 0
+
 satellite_x = earth_x + SATELLITE_DISTANCE
 satellite_y = earth_y
 
@@ -83,6 +95,9 @@ while running:
     # Calculate Earth-Satellite Distance
     # -----------------------------
     distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
+
+    # Calculate gravity for telemetry only; it does not affect motion yet.
+    gravity = calculate_gravity(distance)
 
     # -----------------------------
     # Calculate Earth-Satellite Direction
@@ -140,6 +155,15 @@ while running:
     # -----------------------------
     draw_distance(screen, distance, font, WHITE)
     draw_direction(screen, direction_x, direction_y, font, WHITE)
+    draw_velocity(screen, satellite_velocity_x, satellite_velocity_y, font, WHITE)
+    draw_acceleration(
+        screen,
+        satellite_acceleration_x,
+        satellite_acceleration_y,
+        font,
+        WHITE,
+    )
+    draw_gravity(screen, gravity, font, WHITE)
 
     # -----------------------------
     # Update Display
@@ -156,11 +180,18 @@ while running:
     # -----------------------------
     # Update Satellite Position
     # -----------------------------
-    satellite_x, satellite_y = update_satellite(
+    (
         satellite_x,
         satellite_y,
         satellite_velocity_x,
         satellite_velocity_y,
+    ) = update_satellite(
+        satellite_x,
+        satellite_y,
+        satellite_velocity_x,
+        satellite_velocity_y,
+        satellite_acceleration_x,
+        satellite_acceleration_y,
         dt,
     )
 
