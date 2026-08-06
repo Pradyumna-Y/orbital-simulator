@@ -70,10 +70,6 @@ earth_y = HEIGHT // 2
 satellite_velocity_x = 120
 satellite_velocity_y = 0
 
-# Acceleration is measured in pixels per second squared.
-satellite_acceleration_x = 0
-satellite_acceleration_y = 0
-
 satellite_x = earth_x + SATELLITE_DISTANCE
 satellite_y = earth_y
 
@@ -96,7 +92,6 @@ while running:
     # -----------------------------
     distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
 
-    # Calculate gravity for telemetry only; it does not affect motion yet.
     gravity = calculate_gravity(distance)
 
     # -----------------------------
@@ -108,6 +103,14 @@ while running:
         satellite_x,
         satellite_y,
     )
+
+    # -----------------------------
+    # Calculate Gravitational Acceleration
+    # -----------------------------
+    # Gravity magnitude and direction combine to create acceleration.
+    # The negative sign points the acceleration back toward Earth.
+    satellite_acceleration_x = -gravity * direction_x
+    satellite_acceleration_y = -gravity * direction_y
 
     # -----------------------------
     # Clear Screen
