@@ -4,6 +4,7 @@ from constants import (
     EARTH_RADIUS,
     FPS,
     HEIGHT,
+    MAX_TRAIL_POINTS,
     SATELLITE_DISTANCE,
     SATELLITE_RADIUS,
     SATELLITE_RED,
@@ -20,6 +21,7 @@ from renderer import (
     draw_gravity,
     draw_labels,
     draw_orbital_velocity,
+    draw_orbit_trail,
     draw_satellite,
     draw_stars,
     draw_velocity,
@@ -80,6 +82,9 @@ initial_orbital_velocity = calculate_orbital_velocity(initial_distance)
 satellite_velocity_x = 0
 satellite_velocity_y = -initial_orbital_velocity
 
+# Engineers use trajectory trails to evaluate the shape and stability of an orbit.
+orbit_trail = []
+
 # -----------------------------
 # Main Game Loop
 # -----------------------------
@@ -134,6 +139,11 @@ while running:
     # Draw Star Field
     # -----------------------------
     draw_stars(screen, STAR_COORDINATES, WHITE)
+
+    # -----------------------------
+    # Draw Orbit Trail
+    # -----------------------------
+    draw_orbit_trail(screen, orbit_trail)
 
     # -----------------------------
     # Draw Earth
@@ -211,6 +221,13 @@ while running:
         satellite_acceleration_y,
         dt,
     )
+
+    # Store updated positions so engineers can analyze the orbital trajectory.
+    orbit_trail.append((satellite_x, satellite_y))
+
+    # Keep the recent trail history bounded as the simulation runs.
+    if len(orbit_trail) > MAX_TRAIL_POINTS:
+        orbit_trail.pop(0)
 
 # -----------------------------
 # Shut Down Pygame

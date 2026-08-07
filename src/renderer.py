@@ -1,5 +1,7 @@
 import pygame
 
+from constants import TRAIL_COLOR
+
 
 def draw_stars(screen, star_coordinates, color):
     """Draw the fixed star field."""
@@ -15,6 +17,13 @@ def draw_earth(screen, earth_x, earth_y, radius, color):
 def draw_satellite(screen, satellite_x, satellite_y, radius, color):
     """Draw the satellite at its current position."""
     pygame.draw.circle(screen, color, (satellite_x, satellite_y), radius)
+
+
+def draw_orbit_trail(screen, orbit_trail):
+    """Draw the satellite's previous positions as a trajectory trail."""
+    for position in orbit_trail:
+        screen_position = (int(position[0]), int(position[1]))
+        pygame.draw.circle(screen, TRAIL_COLOR, screen_position, 2)
 
 
 def draw_labels(

@@ -31,3 +31,9 @@ SATELLITE_DISTANCE = 150
 # Star Field
 # -----------------------------
 NUMBER_OF_STARS = 200
+
+# -----------------------------
+# Orbit Trail
+# -----------------------------
+MAX_TRAIL_POINTS = 600
+TRAIL_COLOR = (180, 180, 200)
