@@ -35,5 +35,5 @@ NUMBER_OF_STARS = 200
 # -----------------------------
 # Orbit Trail
 # -----------------------------
-MAX_TRAIL_POINTS = 600
+MAX_TRAIL_POINTS = 5000
 TRAIL_COLOR = (180, 180, 200)

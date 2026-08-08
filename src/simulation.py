@@ -79,3 +79,16 @@ def calculate_orbital_velocity(distance):
     orbital_velocity = math.sqrt(GRAVITY_STRENGTH / distance)
 
     return orbital_velocity
+
+
+def calculate_orbital_period(distance, orbital_velocity):
+    """Calculate the time required for one complete circular revolution."""
+    # A zero velocity cannot complete an orbit and would cause division by zero.
+    if orbital_velocity == 0:
+        return 0
+
+    # One complete orbit travels the circumference of a circle.
+    circumference = 2 * math.pi * distance
+    orbital_period = circumference / orbital_velocity
+
+    return orbital_period

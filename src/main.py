@@ -1,3 +1,5 @@
+import math
+
 import pygame
 from constants import (
     EARTH_BLUE,
@@ -17,11 +19,14 @@ from renderer import (
     draw_acceleration,
     draw_direction,
     draw_distance,
+    draw_distance_stability,
     draw_earth,
     draw_gravity,
     draw_labels,
     draw_orbital_velocity,
+    draw_orbital_period,
     draw_orbit_trail,
+    draw_measured_period,
     draw_satellite,
     draw_stars,
     draw_velocity,
@@ -31,6 +36,7 @@ from simulation import (
     calculate_distance,
     calculate_gravity,
     calculate_orbital_velocity,
+    calculate_orbital_period,
     update_satellite,
 )
 
@@ -77,6 +83,16 @@ satellite_y = earth_y
 initial_distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
 initial_orbital_velocity = calculate_orbital_velocity(initial_distance)
 
+# Orbital period is the time required for one complete revolution.
+initial_orbital_period = calculate_orbital_period(
+    initial_distance,
+    initial_orbital_velocity,
+)
+
+# A perfect circular orbit would keep this distance range at zero.
+minimum_distance = initial_distance
+maximum_distance = initial_distance
+
 # Orbital velocity is perpendicular to the radius, so the satellite starts upward.
 # This creates a counterclockwise orbit from a starting point right of Earth.
 satellite_velocity_x = 0
@@ -84,6 +100,14 @@ satellite_velocity_y = -initial_orbital_velocity
 
 # Engineers use trajectory trails to evaluate the shape and stability of an orbit.
 orbit_trail = []
+
+# Track the first complete simulated revolution for period comparison.
+simulation_time = 0
+previous_angle = math.atan2(satellite_y - earth_y, satellite_x - earth_x)
+accumulated_angle = 0
+measured_orbital_period = None
+period_error = None
+percent_error = None
 
 # -----------------------------
 # Main Game Loop
@@ -103,6 +127,11 @@ while running:
     # Calculate Earth-Satellite Distance
     # -----------------------------
     distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
+
+    # Track radial variation to measure orbit stability and circularity.
+    minimum_distance = min(minimum_distance, distance)
+    maximum_distance = max(maximum_distance, distance)
+    distance_range = maximum_distance - minimum_distance
 
     # -----------------------------
     # Calculate Earth-Satellite Direction
@@ -191,6 +220,16 @@ while running:
     )
     draw_gravity(screen, gravity, font, WHITE)
     draw_orbital_velocity(screen, orbital_velocity, font, WHITE)
+    draw_distance_stability(
+        screen,
+        minimum_distance,
+        maximum_distance,
+        distance_range,
+        font,
+        WHITE,
+    )
+    draw_orbital_period(screen, initial_orbital_period, font, WHITE)
+    draw_measured_period(screen, measured_orbital_period, percent_error, font, WHITE)
 
     # -----------------------------
     # Update Display
@@ -221,6 +260,29 @@ while running:
         satellite_acceleration_y,
         dt,
     )
+
+    # Delta time accumulates the elapsed time of the numerical simulation.
+    simulation_time += dt
+
+    # Measure the satellite's angle around Earth after the physics update.
+    current_angle = math.atan2(satellite_y - earth_y, satellite_x - earth_x)
+    angle_change = current_angle - previous_angle
+
+    # Correct the jump that occurs when an angle crosses +pi or -pi.
+    if angle_change > math.pi:
+        angle_change -= 2 * math.pi
+    elif angle_change < -math.pi:
+        angle_change += 2 * math.pi
+
+    # 2 * pi radians represents one complete revolution around Earth.
+    accumulated_angle += abs(angle_change)
+    previous_angle = current_angle
+
+    # Record only the first full orbit so later revolutions do not overwrite it.
+    if measured_orbital_period is None and accumulated_angle >= 2 * math.pi:
+        measured_orbital_period = simulation_time
+        period_error = abs(measured_orbital_period - initial_orbital_period)
+        percent_error = period_error / initial_orbital_period * 100
 
     # Store updated positions so engineers can analyze the orbital trajectory.
     orbit_trail.append((satellite_x, satellite_y))

@@ -102,3 +102,49 @@ def draw_orbital_velocity(screen, orbital_velocity, font, color):
         f"Orbital Velocity: {orbital_velocity:.2f} px/s", True, color
     )
     screen.blit(orbital_velocity_text, (20, 335))
+
+
+def draw_distance_stability(
+    screen,
+    minimum_distance,
+    maximum_distance,
+    distance_range,
+    font,
+    color,
+):
+    """Draw distance measurements used to evaluate orbit circularity."""
+    minimum_text = font.render(
+        f"Minimum Distance: {minimum_distance:.2f} px", True, color
+    )
+    maximum_text = font.render(
+        f"Maximum Distance: {maximum_distance:.2f} px", True, color
+    )
+    range_text = font.render(
+        f"Distance Range: {distance_range:.2f} px", True, color
+    )
+    screen.blit(minimum_text, (20, 370))
+    screen.blit(maximum_text, (20, 405))
+    screen.blit(range_text, (20, 440))
+
+
+def draw_orbital_period(screen, orbital_period, font, color):
+    """Draw the theoretical time required for one complete revolution."""
+    orbital_period_text = font.render(
+        f"Theoretical Period: {orbital_period:.2f} s", True, color
+    )
+    screen.blit(orbital_period_text, (20, 475))
+
+
+def draw_measured_period(screen, measured_period, percent_error, font, color):
+    """Draw the measured period and its difference from the theory."""
+    if measured_period is None:
+        measured_text = font.render("Measured Period: Measuring...", True, color)
+        error_text = font.render("Period Error: Measuring...", True, color)
+    else:
+        measured_text = font.render(
+            f"Measured Period: {measured_period:.2f} s", True, color
+        )
+        error_text = font.render(f"Period Error: {percent_error:.2f} %", True, color)
+
+    screen.blit(measured_text, (20, 510))
+    screen.blit(error_text, (20, 545))
