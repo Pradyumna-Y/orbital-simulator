@@ -81,6 +81,17 @@ def calculate_orbital_velocity(distance):
     return orbital_velocity
 
 
+def calculate_escape_velocity(gravity_strength, distance):
+    """Calculate the minimum speed needed to escape the gravity model."""
+    # A non-positive distance avoids division by zero or an invalid result.
+    if distance <= 0:
+        return 0
+
+    escape_velocity = math.sqrt((2 * gravity_strength) / distance)
+
+    return escape_velocity
+
+
 def calculate_orbital_period(distance, orbital_velocity):
     """Calculate the time required for one complete circular revolution."""
     # A zero velocity cannot complete an orbit and would cause division by zero.
@@ -92,3 +103,76 @@ def calculate_orbital_period(distance, orbital_velocity):
     orbital_period = circumference / orbital_velocity
 
     return orbital_period
+
+
+def calculate_semi_major_axis(periapsis, apoapsis):
+    """Calculate the semi-major axis from the nearest and farthest distances."""
+    # The semi-major axis is the average of periapsis and apoapsis.
+    semi_major_axis = (periapsis + apoapsis) / 2
+
+    return semi_major_axis
+
+
+def calculate_eccentricity(periapsis, apoapsis):
+    """Calculate how much the generated orbit differs from a circle."""
+    # Eccentricity compares the difference between apoapsis and periapsis
+    # with their total distance. A circle has an eccentricity of zero.
+    denominator = apoapsis + periapsis
+
+    if denominator == 0:
+        return 0
+
+    eccentricity = (apoapsis - periapsis) / denominator
+
+    return eccentricity
+
+
+def calculate_focus_distance(semi_major_axis, eccentricity):
+    """Calculate the distance from the center of an ellipse to a focus."""
+    # In an ellipse, focus distance equals semi-major axis times eccentricity.
+    focus_distance = semi_major_axis * eccentricity
+
+    return focus_distance
+
+
+def calculate_swept_area(
+    earth_x,
+    earth_y,
+    previous_x,
+    previous_y,
+    current_x,
+    current_y,
+):
+    """Calculate the triangle area swept from Earth between two positions."""
+    # The cross product gives twice the signed triangle area.
+    area = abs(
+        (previous_x - earth_x) * (current_y - earth_y)
+        - (previous_y - earth_y) * (current_x - earth_x)
+    ) / 2
+
+    return area
+
+
+def calculate_speed(velocity_x, velocity_y):
+    """Calculate satellite speed from its horizontal and vertical velocities."""
+    speed = math.sqrt(velocity_x ** 2 + velocity_y ** 2)
+
+    return speed
+
+
+def calculate_kepler_third_law_ratio(period, semi_major_axis):
+    """Calculate the T squared over a cubed value for an orbit."""
+    # A zero semi-major axis would cause division by zero.
+    if semi_major_axis == 0:
+        return 0
+
+    ratio = (period ** 2) / (semi_major_axis ** 3)
+
+    return ratio
+
+
+def calculate_theoretical_kepler_ratio():
+    """Calculate Kepler's Third Law ratio for the simulation gravity model."""
+    theoretical_ratio = (4 * math.pi ** 2) / GRAVITY_STRENGTH
+
+    return theoretical_ratio

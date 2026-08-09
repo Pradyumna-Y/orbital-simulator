@@ -4,9 +4,15 @@ import pygame
 from constants import (
     EARTH_BLUE,
     EARTH_RADIUS,
+    ESCAPE_TEST_MODE,
+    ESCAPE_TEST_SCALE,
     FPS,
+    GRAVITY_STRENGTH,
     HEIGHT,
+    KEPLER_AREA_INTERVAL,
     MAX_TRAIL_POINTS,
+    MAX_SWEPT_AREA_SAMPLES,
+    ORBIT_VELOCITY_SCALE,
     SATELLITE_DISTANCE,
     SATELLITE_RADIUS,
     SATELLITE_RED,
@@ -21,11 +27,17 @@ from renderer import (
     draw_distance,
     draw_distance_stability,
     draw_earth,
+    draw_escape_telemetry,
     draw_gravity,
     draw_labels,
     draw_orbital_velocity,
     draw_orbital_period,
     draw_orbit_trail,
+    draw_orbit_velocity_scale,
+    draw_orbit_shape,
+    draw_kepler_first_law,
+    draw_kepler_second_law,
+    draw_kepler_third_law,
     draw_measured_period,
     draw_satellite,
     draw_stars,
@@ -34,9 +46,17 @@ from renderer import (
 from simulation import (
     calculate_direction,
     calculate_distance,
+    calculate_escape_velocity,
     calculate_gravity,
     calculate_orbital_velocity,
     calculate_orbital_period,
+    calculate_semi_major_axis,
+    calculate_eccentricity,
+    calculate_focus_distance,
+    calculate_speed,
+    calculate_swept_area,
+    calculate_kepler_third_law_ratio,
+    calculate_theoretical_kepler_ratio,
     update_satellite,
 )
 
@@ -82,6 +102,18 @@ satellite_y = earth_y
 # Calculate the orbital speed from the satellite's initial distance from Earth.
 initial_distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
 initial_orbital_velocity = calculate_orbital_velocity(initial_distance)
+initial_escape_velocity = calculate_escape_velocity(
+    GRAVITY_STRENGTH,
+    initial_distance,
+)
+
+# Normal mode uses scaled circular speed; escape mode uses the escape speed.
+if ESCAPE_TEST_MODE:
+    initial_velocity = initial_escape_velocity * ESCAPE_TEST_SCALE
+    orbit_mode = "Escape Test"
+else:
+    initial_velocity = initial_orbital_velocity * ORBIT_VELOCITY_SCALE
+    orbit_mode = "Elliptical"
 
 # Orbital period is the time required for one complete revolution.
 initial_orbital_period = calculate_orbital_period(
@@ -94,9 +126,9 @@ minimum_distance = initial_distance
 maximum_distance = initial_distance
 
 # Orbital velocity is perpendicular to the radius, so the satellite starts upward.
-# This creates a counterclockwise orbit from a starting point right of Earth.
+# Scaling the circular speed lets gravity create an elliptical orbit naturally.
 satellite_velocity_x = 0
-satellite_velocity_y = -initial_orbital_velocity
+satellite_velocity_y = -initial_velocity
 
 # Engineers use trajectory trails to evaluate the shape and stability of an orbit.
 orbit_trail = []
@@ -108,6 +140,17 @@ accumulated_angle = 0
 measured_orbital_period = None
 period_error = None
 percent_error = None
+
+# Start each Kepler II interval from the satellite's current position.
+kepler_interval_time = 0
+previous_sample_x = satellite_x
+previous_sample_y = satellite_y
+swept_areas = []
+
+# Speed changes naturally as gravity accelerates the satellite around Earth.
+initial_speed = calculate_speed(satellite_velocity_x, satellite_velocity_y)
+maximum_speed = initial_speed
+minimum_speed = initial_speed
 
 # -----------------------------
 # Main Game Loop
@@ -133,6 +176,36 @@ while running:
     maximum_distance = max(maximum_distance, distance)
     distance_range = maximum_distance - minimum_distance
 
+    # Periapsis is the closest point to Earth; apoapsis is the farthest.
+    periapsis = minimum_distance
+    apoapsis = maximum_distance
+
+    # These values describe the size and shape of the physics-generated orbit.
+    semi_major_axis = calculate_semi_major_axis(periapsis, apoapsis)
+    eccentricity = calculate_eccentricity(periapsis, apoapsis)
+    focus_distance = calculate_focus_distance(semi_major_axis, eccentricity)
+
+    # Kepler's Third Law compares period squared with semi-major axis cubed.
+    theoretical_kepler_ratio = calculate_theoretical_kepler_ratio()
+    if measured_orbital_period is None:
+        measured_kepler_ratio = None
+        kepler_ratio_error = None
+    else:
+        measured_kepler_ratio = calculate_kepler_third_law_ratio(
+            measured_orbital_period,
+            semi_major_axis,
+        )
+        kepler_ratio_error = (
+            abs(measured_kepler_ratio - theoretical_kepler_ratio)
+            / theoretical_kepler_ratio
+            * 100
+        )
+
+    # Speed is the magnitude of the current horizontal and vertical velocity.
+    current_speed = calculate_speed(satellite_velocity_x, satellite_velocity_y)
+    maximum_speed = max(maximum_speed, current_speed)
+    minimum_speed = min(minimum_speed, current_speed)
+
     # -----------------------------
     # Calculate Earth-Satellite Direction
     # -----------------------------
@@ -150,6 +223,7 @@ while running:
 
     # Calculate the circular-orbit speed for HUD telemetry only.
     orbital_velocity = calculate_orbital_velocity(distance)
+    escape_velocity = calculate_escape_velocity(GRAVITY_STRENGTH, distance)
 
     # -----------------------------
     # Calculate Gravitational Acceleration
@@ -220,6 +294,7 @@ while running:
     )
     draw_gravity(screen, gravity, font, WHITE)
     draw_orbital_velocity(screen, orbital_velocity, font, WHITE)
+    draw_escape_telemetry(screen, escape_velocity, orbit_mode, font, WHITE)
     draw_distance_stability(
         screen,
         minimum_distance,
@@ -230,6 +305,36 @@ while running:
     )
     draw_orbital_period(screen, initial_orbital_period, font, WHITE)
     draw_measured_period(screen, measured_orbital_period, percent_error, font, WHITE)
+    draw_orbit_velocity_scale(screen, ORBIT_VELOCITY_SCALE, font, WHITE)
+    draw_orbit_shape(
+        screen,
+        periapsis,
+        apoapsis,
+        semi_major_axis,
+        eccentricity,
+        focus_distance,
+        font,
+        WHITE,
+    )
+    draw_kepler_first_law(screen, font, WHITE)
+    draw_kepler_second_law(
+        screen,
+        KEPLER_AREA_INTERVAL,
+        swept_areas,
+        current_speed,
+        maximum_speed,
+        minimum_speed,
+        font,
+        WHITE,
+    )
+    draw_kepler_third_law(
+        screen,
+        measured_kepler_ratio,
+        theoretical_kepler_ratio,
+        kepler_ratio_error,
+        font,
+        WHITE,
+    )
 
     # -----------------------------
     # Update Display
@@ -263,6 +368,27 @@ while running:
 
     # Delta time accumulates the elapsed time of the numerical simulation.
     simulation_time += dt
+
+    # Sample the physics-generated path at equal simulation-time intervals.
+    kepler_interval_time += dt
+    if kepler_interval_time >= KEPLER_AREA_INTERVAL:
+        swept_area = calculate_swept_area(
+            earth_x,
+            earth_y,
+            previous_sample_x,
+            previous_sample_y,
+            satellite_x,
+            satellite_y,
+        )
+        swept_areas.append(swept_area)
+
+        # Keep a recent set of interval areas for comparison in the HUD.
+        if len(swept_areas) > MAX_SWEPT_AREA_SAMPLES:
+            swept_areas.pop(0)
+
+        previous_sample_x = satellite_x
+        previous_sample_y = satellite_y
+        kepler_interval_time -= KEPLER_AREA_INTERVAL
 
     # Measure the satellite's angle around Earth after the physics update.
     current_angle = math.atan2(satellite_y - earth_y, satellite_x - earth_x)
