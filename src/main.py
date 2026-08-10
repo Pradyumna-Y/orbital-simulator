@@ -4,16 +4,18 @@ import pygame
 from constants import (
     EARTH_BLUE,
     EARTH_RADIUS,
+    EARTH_RADIUS_KM,
+    EARTH_MU,
     ESCAPE_TEST_MODE,
     ESCAPE_TEST_SCALE,
     FPS,
-    GRAVITY_STRENGTH,
     HEIGHT,
+    INITIAL_ORBIT_RADIUS_KM,
     KEPLER_AREA_INTERVAL,
     MAX_TRAIL_POINTS,
     MAX_SWEPT_AREA_SAMPLES,
+    KM_PER_PIXEL,
     ORBIT_VELOCITY_SCALE,
-    SATELLITE_DISTANCE,
     SATELLITE_RADIUS,
     SATELLITE_RED,
     SPACE,
@@ -28,6 +30,7 @@ from renderer import (
     draw_distance_stability,
     draw_earth,
     draw_escape_telemetry,
+    draw_orbital_energy,
     draw_gravity,
     draw_labels,
     draw_orbital_velocity,
@@ -47,6 +50,8 @@ from simulation import (
     calculate_direction,
     calculate_distance,
     calculate_escape_velocity,
+    calculate_specific_orbital_energy,
+    classify_orbit,
     calculate_gravity,
     calculate_orbital_velocity,
     calculate_orbital_period,
@@ -88,22 +93,30 @@ pygame.display.set_caption("Operation Aerospace 2026")
 clock = pygame.time.Clock()
 
 # -----------------------------
-# Earth Properties
+# Earth Screen Position
 # -----------------------------
-earth_x = WIDTH // 2
-earth_y = HEIGHT // 2
+earth_screen_x = WIDTH // 2
+earth_screen_y = HEIGHT // 2
 
 # -----------------------------
-# Satellite Properties
+# Kilometer-Based Physics State
 # -----------------------------
-satellite_x = earth_x + SATELLITE_DISTANCE
-satellite_y = earth_y
+# Earth is the physics origin; satellite position is relative to Earth in km.
+earth_x_km = 0.0
+earth_y_km = 0.0
+satellite_x_km = INITIAL_ORBIT_RADIUS_KM
+satellite_y_km = 0.0
 
 # Calculate the orbital speed from the satellite's initial distance from Earth.
-initial_distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
+initial_distance = calculate_distance(
+    earth_x_km,
+    earth_y_km,
+    satellite_x_km,
+    satellite_y_km,
+)
 initial_orbital_velocity = calculate_orbital_velocity(initial_distance)
 initial_escape_velocity = calculate_escape_velocity(
-    GRAVITY_STRENGTH,
+    EARTH_MU,
     initial_distance,
 )
 
@@ -127,15 +140,18 @@ maximum_distance = initial_distance
 
 # Orbital velocity is perpendicular to the radius, so the satellite starts upward.
 # Scaling the circular speed lets gravity create an elliptical orbit naturally.
-satellite_velocity_x = 0
-satellite_velocity_y = -initial_velocity
+satellite_velocity_x_km_s = 0.0
+satellite_velocity_y_km_s = -initial_velocity
 
 # Engineers use trajectory trails to evaluate the shape and stability of an orbit.
 orbit_trail = []
 
 # Track the first complete simulated revolution for period comparison.
 simulation_time = 0
-previous_angle = math.atan2(satellite_y - earth_y, satellite_x - earth_x)
+previous_angle = math.atan2(
+    satellite_y_km - earth_y_km,
+    satellite_x_km - earth_x_km,
+)
 accumulated_angle = 0
 measured_orbital_period = None
 period_error = None
@@ -143,12 +159,12 @@ percent_error = None
 
 # Start each Kepler II interval from the satellite's current position.
 kepler_interval_time = 0
-previous_sample_x = satellite_x
-previous_sample_y = satellite_y
+previous_sample_x_km = satellite_x_km
+previous_sample_y_km = satellite_y_km
 swept_areas = []
 
 # Speed changes naturally as gravity accelerates the satellite around Earth.
-initial_speed = calculate_speed(satellite_velocity_x, satellite_velocity_y)
+initial_speed = calculate_speed(satellite_velocity_x_km_s, satellite_velocity_y_km_s)
 maximum_speed = initial_speed
 minimum_speed = initial_speed
 
@@ -169,7 +185,13 @@ while running:
     # -----------------------------
     # Calculate Earth-Satellite Distance
     # -----------------------------
-    distance = calculate_distance(earth_x, earth_y, satellite_x, satellite_y)
+    distance = calculate_distance(
+        earth_x_km,
+        earth_y_km,
+        satellite_x_km,
+        satellite_y_km,
+    )
+    altitude = distance - EARTH_RADIUS_KM
 
     # Track radial variation to measure orbit stability and circularity.
     minimum_distance = min(minimum_distance, distance)
@@ -202,18 +224,29 @@ while running:
         )
 
     # Speed is the magnitude of the current horizontal and vertical velocity.
-    current_speed = calculate_speed(satellite_velocity_x, satellite_velocity_y)
+    current_speed = calculate_speed(
+        satellite_velocity_x_km_s,
+        satellite_velocity_y_km_s,
+    )
     maximum_speed = max(maximum_speed, current_speed)
     minimum_speed = min(minimum_speed, current_speed)
+
+    # Specific orbital energy determines whether gravity can keep the orbit bound.
+    specific_energy = calculate_specific_orbital_energy(
+        current_speed,
+        EARTH_MU,
+        distance,
+    )
+    orbit_classification = classify_orbit(specific_energy)
 
     # -----------------------------
     # Calculate Earth-Satellite Direction
     # -----------------------------
     direction_x, direction_y = calculate_direction(
-        earth_x,
-        earth_y,
-        satellite_x,
-        satellite_y,
+        earth_x_km,
+        earth_y_km,
+        satellite_x_km,
+        satellite_y_km,
     )
 
     # -----------------------------
@@ -223,15 +256,15 @@ while running:
 
     # Calculate the circular-orbit speed for HUD telemetry only.
     orbital_velocity = calculate_orbital_velocity(distance)
-    escape_velocity = calculate_escape_velocity(GRAVITY_STRENGTH, distance)
+    escape_velocity = calculate_escape_velocity(EARTH_MU, distance)
 
     # -----------------------------
     # Calculate Gravitational Acceleration
     # -----------------------------
     # Gravity magnitude and direction combine to create acceleration.
     # The negative sign points the acceleration back toward Earth.
-    satellite_acceleration_x = -gravity * direction_x
-    satellite_acceleration_y = -gravity * direction_y
+    satellite_acceleration_x_km_s2 = -gravity * direction_x
+    satellite_acceleration_y_km_s2 = -gravity * direction_y
 
     # -----------------------------
     # Clear Screen
@@ -246,20 +279,29 @@ while running:
     # -----------------------------
     # Draw Orbit Trail
     # -----------------------------
-    draw_orbit_trail(screen, orbit_trail)
+    draw_orbit_trail(
+        screen,
+        earth_screen_x,
+        earth_screen_y,
+        orbit_trail,
+        KM_PER_PIXEL,
+    )
 
     # -----------------------------
     # Draw Earth
     # -----------------------------
-    draw_earth(screen, earth_x, earth_y, EARTH_RADIUS, EARTH_BLUE)
+    draw_earth(screen, earth_screen_x, earth_screen_y, EARTH_RADIUS, EARTH_BLUE)
 
     # -----------------------------
     # Draw Satellite
     # -----------------------------
     draw_satellite(
         screen,
-        satellite_x,
-        satellite_y,
+        earth_screen_x,
+        earth_screen_y,
+        satellite_x_km,
+        satellite_y_km,
+        KM_PER_PIXEL,
         SATELLITE_RADIUS,
         SATELLITE_RED,
     )
@@ -271,30 +313,44 @@ while running:
         screen,
         earth_label,
         satellite_label,
-        earth_x,
-        earth_y,
+        earth_screen_x,
+        earth_screen_y,
         EARTH_RADIUS,
-        satellite_x,
-        satellite_y,
+        satellite_x_km,
+        satellite_y_km,
+        KM_PER_PIXEL,
         SATELLITE_RADIUS,
     )
 
     # -----------------------------
     # Draw Distance Telemetry
     # -----------------------------
-    draw_distance(screen, distance, font, WHITE)
+    draw_distance(screen, distance, altitude, font, WHITE)
     draw_direction(screen, direction_x, direction_y, font, WHITE)
-    draw_velocity(screen, satellite_velocity_x, satellite_velocity_y, font, WHITE)
+    draw_velocity(
+        screen,
+        satellite_velocity_x_km_s,
+        satellite_velocity_y_km_s,
+        font,
+        WHITE,
+    )
     draw_acceleration(
         screen,
-        satellite_acceleration_x,
-        satellite_acceleration_y,
+        satellite_acceleration_x_km_s2,
+        satellite_acceleration_y_km_s2,
         font,
         WHITE,
     )
     draw_gravity(screen, gravity, font, WHITE)
     draw_orbital_velocity(screen, orbital_velocity, font, WHITE)
     draw_escape_telemetry(screen, escape_velocity, orbit_mode, font, WHITE)
+    draw_orbital_energy(
+        screen,
+        specific_energy,
+        orbit_classification,
+        font,
+        WHITE,
+    )
     draw_distance_stability(
         screen,
         minimum_distance,
@@ -352,17 +408,17 @@ while running:
     # Update Satellite Position
     # -----------------------------
     (
-        satellite_x,
-        satellite_y,
-        satellite_velocity_x,
-        satellite_velocity_y,
+        satellite_x_km,
+        satellite_y_km,
+        satellite_velocity_x_km_s,
+        satellite_velocity_y_km_s,
     ) = update_satellite(
-        satellite_x,
-        satellite_y,
-        satellite_velocity_x,
-        satellite_velocity_y,
-        satellite_acceleration_x,
-        satellite_acceleration_y,
+        satellite_x_km,
+        satellite_y_km,
+        satellite_velocity_x_km_s,
+        satellite_velocity_y_km_s,
+        satellite_acceleration_x_km_s2,
+        satellite_acceleration_y_km_s2,
         dt,
     )
 
@@ -373,12 +429,12 @@ while running:
     kepler_interval_time += dt
     if kepler_interval_time >= KEPLER_AREA_INTERVAL:
         swept_area = calculate_swept_area(
-            earth_x,
-            earth_y,
-            previous_sample_x,
-            previous_sample_y,
-            satellite_x,
-            satellite_y,
+            earth_x_km,
+            earth_y_km,
+            previous_sample_x_km,
+            previous_sample_y_km,
+            satellite_x_km,
+            satellite_y_km,
         )
         swept_areas.append(swept_area)
 
@@ -386,12 +442,15 @@ while running:
         if len(swept_areas) > MAX_SWEPT_AREA_SAMPLES:
             swept_areas.pop(0)
 
-        previous_sample_x = satellite_x
-        previous_sample_y = satellite_y
+        previous_sample_x_km = satellite_x_km
+        previous_sample_y_km = satellite_y_km
         kepler_interval_time -= KEPLER_AREA_INTERVAL
 
     # Measure the satellite's angle around Earth after the physics update.
-    current_angle = math.atan2(satellite_y - earth_y, satellite_x - earth_x)
+    current_angle = math.atan2(
+        satellite_y_km - earth_y_km,
+        satellite_x_km - earth_x_km,
+    )
     angle_change = current_angle - previous_angle
 
     # Correct the jump that occurs when an angle crosses +pi or -pi.
@@ -411,7 +470,7 @@ while running:
         percent_error = period_error / initial_orbital_period * 100
 
     # Store updated positions so engineers can analyze the orbital trajectory.
-    orbit_trail.append((satellite_x, satellite_y))
+    orbit_trail.append((satellite_x_km, satellite_y_km))
 
     # Keep the recent trail history bounded as the simulation runs.
     if len(orbit_trail) > MAX_TRAIL_POINTS:

@@ -1,6 +1,9 @@
 import math
 
-from constants import GRAVITY_STRENGTH
+from constants import EARTH_MU
+
+
+ENERGY_TOLERANCE = 0.01
 
 
 def update_satellite(
@@ -58,25 +61,25 @@ def calculate_direction(earth_x, earth_y, satellite_x, satellite_y):
 
 
 def calculate_gravity(distance):
-    """Calculate simplified gravity magnitude using inverse-square distance."""
+    """Calculate gravitational acceleration in km/s^2."""
     # A zero distance avoids division by zero.
     if distance == 0:
         return 0
 
     # Gravity becomes weaker as the square of distance becomes larger.
-    gravity = GRAVITY_STRENGTH / (distance ** 2)
+    gravity = EARTH_MU / (distance ** 2)
 
     return gravity
 
 
 def calculate_orbital_velocity(distance):
-    """Calculate the theoretical circular orbital velocity at a distance."""
+    """Calculate the theoretical circular orbital velocity in km/s."""
     # A zero distance avoids division by zero.
     if distance == 0:
         return 0
 
     # This equation comes from balancing gravity with centripetal acceleration.
-    orbital_velocity = math.sqrt(GRAVITY_STRENGTH / distance)
+    orbital_velocity = math.sqrt(EARTH_MU / distance)
 
     return orbital_velocity
 
@@ -90,6 +93,27 @@ def calculate_escape_velocity(gravity_strength, distance):
     escape_velocity = math.sqrt((2 * gravity_strength) / distance)
 
     return escape_velocity
+
+
+def calculate_specific_orbital_energy(speed, gravity_strength, distance):
+    """Calculate orbital energy per unit satellite mass."""
+    # A non-positive distance avoids division by zero or an invalid result.
+    if distance <= 0:
+        return 0
+
+    specific_energy = (speed ** 2) / 2 - gravity_strength / distance
+
+    return specific_energy
+
+
+def classify_orbit(specific_energy):
+    """Classify the orbit using specific energy and a small tolerance."""
+    if specific_energy < -ENERGY_TOLERANCE:
+        return "Bound"
+    if specific_energy > ENERGY_TOLERANCE:
+        return "Escape"
+
+    return "Escape Boundary"
 
 
 def calculate_orbital_period(distance, orbital_velocity):
@@ -172,7 +196,7 @@ def calculate_kepler_third_law_ratio(period, semi_major_axis):
 
 
 def calculate_theoretical_kepler_ratio():
-    """Calculate Kepler's Third Law ratio for the simulation gravity model."""
-    theoretical_ratio = (4 * math.pi ** 2) / GRAVITY_STRENGTH
+    """Calculate Kepler's Third Law ratio for Earth's gravity parameter."""
+    theoretical_ratio = (4 * math.pi ** 2) / EARTH_MU
 
     return theoretical_ratio
