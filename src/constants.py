@@ -27,8 +27,8 @@ KM_PER_PIXEL = 50.0
 ORBIT_VELOCITY_SCALE = 0.9
 
 # Enable this mode to initialize the satellite at the calculated escape speed.
-ESCAPE_TEST_MODE = True
-ESCAPE_TEST_SCALE = 1.05
+ESCAPE_TEST_MODE = False
+ESCAPE_TEST_SCALE = 1.0
 
 # Simulation seconds between Kepler's Second Law area measurements.
 KEPLER_AREA_INTERVAL = 2.0

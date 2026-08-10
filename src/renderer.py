@@ -1,3 +1,5 @@
+import math
+
 import pygame
 
 from constants import TRAIL_COLOR
@@ -28,6 +30,57 @@ def draw_satellite(
     screen_x = earth_screen_x + satellite_x_km / km_per_pixel
     screen_y = earth_screen_y + satellite_y_km / km_per_pixel
     pygame.draw.circle(screen, color, (int(screen_x), int(screen_y)), radius)
+
+
+def draw_motion_vectors(
+    screen,
+    earth_screen_x,
+    earth_screen_y,
+    satellite_x_km,
+    satellite_y_km,
+    km_per_pixel,
+    velocity_x,
+    velocity_y,
+    acceleration_x,
+    acceleration_y,
+    label_font,
+):
+    """Draw visual-only velocity and gravitational acceleration arrows."""
+    start_x = earth_screen_x + satellite_x_km / km_per_pixel
+    start_y = earth_screen_y + satellite_y_km / km_per_pixel
+
+    def draw_arrow(vector_x, vector_y, length, color, label):
+        magnitude = math.sqrt(vector_x ** 2 + vector_y ** 2)
+        if magnitude == 0:
+            return
+
+        unit_x = vector_x / magnitude
+        unit_y = vector_y / magnitude
+        end_x = start_x + unit_x * length
+        end_y = start_y + unit_y * length
+        pygame.draw.line(screen, color, (start_x, start_y), (end_x, end_y), 3)
+
+        arrow_angle = math.atan2(unit_y, unit_x)
+        left_point = (
+            end_x - 10 * math.cos(arrow_angle - math.pi / 6),
+            end_y - 10 * math.sin(arrow_angle - math.pi / 6),
+        )
+        right_point = (
+            end_x - 10 * math.cos(arrow_angle + math.pi / 6),
+            end_y - 10 * math.sin(arrow_angle + math.pi / 6),
+        )
+        pygame.draw.polygon(screen, color, [(end_x, end_y), left_point, right_point])
+        screen.blit(label_font.render(label, True, color), (end_x + 5, end_y + 5))
+
+    velocity_magnitude = math.sqrt(velocity_x ** 2 + velocity_y ** 2)
+    acceleration_magnitude = math.sqrt(acceleration_x ** 2 + acceleration_y ** 2)
+
+    # These lengths are visual scaling only and do not change physics values.
+    velocity_length = min(80, max(30, velocity_magnitude * 6))
+    acceleration_length = min(80, max(30, acceleration_magnitude * 6000))
+
+    draw_arrow(velocity_x, velocity_y, velocity_length, (80, 255, 130), "v")
+    draw_arrow(acceleration_x, acceleration_y, acceleration_length, (255, 170, 70), "a")
 
 
 def draw_orbit_trail(
@@ -316,3 +369,119 @@ def draw_kepler_third_law(
     screen.blit(measured_text, (650, 475))
     screen.blit(theoretical_text, (650, 510))
     screen.blit(error_text, (650, 545))
+
+
+def draw_controls_hint(screen, font, color):
+    """Draw a compact reminder of the simulator keyboard controls."""
+    controls_text = font.render(
+        "SPACE: Pause | R: Reset | T: Trail | H: HUD", True, color
+    )
+    screen.blit(controls_text, (320, 5))
+
+
+def draw_engineering_hud(
+    screen,
+    title_font,
+    body_font,
+    color,
+    altitude,
+    distance,
+    speed,
+    orbit_classification,
+    periapsis,
+    apoapsis,
+    semi_major_axis,
+    eccentricity,
+    theoretical_period,
+    measured_period,
+    swept_areas,
+    kepler_ratio_error,
+    simulation_time,
+    paused,
+):
+    """Draw a compact engineering summary of the current simulation state."""
+    panel_color = (8, 14, 28)
+    border_color = (70, 110, 160)
+    heading_color = (130, 200, 255)
+
+    def draw_panel(x, y, width, height, title, lines):
+        pygame.draw.rect(screen, panel_color, (x, y, width, height))
+        pygame.draw.rect(screen, border_color, (x, y, width, height), 1)
+        screen.blit(title_font.render(title, True, heading_color), (x + 12, y + 8))
+        for index, line in enumerate(lines):
+            text = body_font.render(line, True, color)
+            screen.blit(text, (x + 12, y + 38 + index * 24))
+
+    if measured_period is None:
+        period_text = f"Period: Theory {theoretical_period:.2f} s"
+    else:
+        period_text = f"Period: {measured_period:.2f} s"
+
+    if swept_areas:
+        swept_area_variation = max(swept_areas) - min(swept_areas)
+        kepler_two_lines = [
+            "Kepler II: Swept area variation",
+            f"  {swept_area_variation:.2f} km^2",
+        ]
+    else:
+        kepler_two_lines = ["Kepler II: Measuring swept areas..."]
+
+    if kepler_ratio_error is None:
+        kepler_three_text = "Kepler III: Measuring ratio error..."
+    else:
+        kepler_three_text = f"Kepler III: Ratio error {kepler_ratio_error:.2f} %"
+
+    draw_panel(
+        18,
+        18,
+        320,
+        145,
+        "ORBIT",
+        [
+            f"Altitude: {altitude:.2f} km",
+            f"Distance: {distance:.2f} km",
+            f"Speed: {speed:.3f} km/s",
+            f"Classification: {orbit_classification}",
+        ],
+    )
+    draw_panel(
+        18,
+        178,
+        320,
+        170,
+        "ORBITAL MECHANICS",
+        [
+            f"Periapsis: {periapsis:.2f} km",
+            f"Apoapsis: {apoapsis:.2f} km",
+            f"Semi-major Axis: {semi_major_axis:.2f} km",
+            f"Eccentricity: {eccentricity:.3f}",
+            period_text,
+        ],
+    )
+    draw_panel(
+        18,
+        363,
+        320,
+        145,
+        "VALIDATION",
+        [
+            "Kepler I: Earth at one focus",
+            *kepler_two_lines,
+            kepler_three_text,
+        ],
+    )
+
+    status_color = (255, 120, 120) if paused else heading_color
+    status_text = "PAUSED" if paused else "RUNNING"
+    screen.blit(
+        title_font.render(status_text, True, status_color),
+        (830, 18),
+    )
+    simulation_text = body_font.render(
+        f"Simulation Time: {simulation_time:.2f} s", True, color
+    )
+    controls_text = body_font.render(
+        "SPACE: Pause | R: Reset | T: Trail | H: HUD", True, color
+    )
+    screen.blit(simulation_text, (18, 650))
+    screen.blit(controls_text, (420, 650))

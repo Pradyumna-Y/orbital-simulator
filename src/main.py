@@ -25,10 +25,13 @@ from constants import (
 from stars import STAR_COORDINATES
 from renderer import (
     draw_acceleration,
+    draw_controls_hint,
+    draw_engineering_hud,
     draw_direction,
     draw_distance,
     draw_distance_stability,
     draw_earth,
+    draw_motion_vectors,
     draw_escape_telemetry,
     draw_orbital_energy,
     draw_gravity,
@@ -74,6 +77,8 @@ pygame.init()
 # Font Setup
 # -----------------------------
 font = pygame.font.SysFont(None, 28)
+hud_title_font = pygame.font.SysFont(None, 20)
+hud_body_font = pygame.font.SysFont(None, 18)
 
 # -----------------------------
 # Text Rendering
@@ -104,69 +109,81 @@ earth_screen_y = HEIGHT // 2
 # Earth is the physics origin; satellite position is relative to Earth in km.
 earth_x_km = 0.0
 earth_y_km = 0.0
-satellite_x_km = INITIAL_ORBIT_RADIUS_KM
-satellite_y_km = 0.0
 
-# Calculate the orbital speed from the satellite's initial distance from Earth.
-initial_distance = calculate_distance(
-    earth_x_km,
-    earth_y_km,
-    satellite_x_km,
-    satellite_y_km,
-)
-initial_orbital_velocity = calculate_orbital_velocity(initial_distance)
-initial_escape_velocity = calculate_escape_velocity(
-    EARTH_MU,
-    initial_distance,
-)
 
-# Normal mode uses scaled circular speed; escape mode uses the escape speed.
-if ESCAPE_TEST_MODE:
-    initial_velocity = initial_escape_velocity * ESCAPE_TEST_SCALE
-    orbit_mode = "Escape Test"
-else:
-    initial_velocity = initial_orbital_velocity * ORBIT_VELOCITY_SCALE
-    orbit_mode = "Elliptical"
+def reset_simulation():
+    """Restore the satellite and all analysis measurements to their initial state."""
+    global satellite_x_km, satellite_y_km
+    global satellite_velocity_x_km_s, satellite_velocity_y_km_s
+    global initial_distance, initial_orbital_velocity, initial_escape_velocity
+    global initial_velocity, initial_orbital_period, orbit_mode
+    global minimum_distance, maximum_distance, orbit_trail
+    global simulation_time, previous_angle, accumulated_angle
+    global measured_orbital_period, period_error, percent_error
+    global kepler_interval_time, previous_sample_x_km, previous_sample_y_km
+    global swept_areas, initial_speed, maximum_speed, minimum_speed
 
-# Orbital period is the time required for one complete revolution.
-initial_orbital_period = calculate_orbital_period(
-    initial_distance,
-    initial_orbital_velocity,
-)
+    satellite_x_km = INITIAL_ORBIT_RADIUS_KM
+    satellite_y_km = 0.0
 
-# A perfect circular orbit would keep this distance range at zero.
-minimum_distance = initial_distance
-maximum_distance = initial_distance
+    initial_distance = calculate_distance(
+        earth_x_km,
+        earth_y_km,
+        satellite_x_km,
+        satellite_y_km,
+    )
+    initial_orbital_velocity = calculate_orbital_velocity(initial_distance)
+    initial_escape_velocity = calculate_escape_velocity(EARTH_MU, initial_distance)
 
-# Orbital velocity is perpendicular to the radius, so the satellite starts upward.
-# Scaling the circular speed lets gravity create an elliptical orbit naturally.
-satellite_velocity_x_km_s = 0.0
-satellite_velocity_y_km_s = -initial_velocity
+    # Normal mode uses scaled circular speed; escape mode uses the escape speed.
+    if ESCAPE_TEST_MODE:
+        initial_velocity = initial_escape_velocity * ESCAPE_TEST_SCALE
+        orbit_mode = "Escape Test"
+    else:
+        initial_velocity = initial_orbital_velocity * ORBIT_VELOCITY_SCALE
+        orbit_mode = "Elliptical"
 
-# Engineers use trajectory trails to evaluate the shape and stability of an orbit.
-orbit_trail = []
+    initial_orbital_period = calculate_orbital_period(
+        initial_distance,
+        initial_orbital_velocity,
+    )
+    minimum_distance = initial_distance
+    maximum_distance = initial_distance
 
-# Track the first complete simulated revolution for period comparison.
-simulation_time = 0
-previous_angle = math.atan2(
-    satellite_y_km - earth_y_km,
-    satellite_x_km - earth_x_km,
-)
-accumulated_angle = 0
-measured_orbital_period = None
-period_error = None
-percent_error = None
+    # Orbital velocity is perpendicular to the radius at the starting position.
+    satellite_velocity_x_km_s = 0.0
+    satellite_velocity_y_km_s = -initial_velocity
 
-# Start each Kepler II interval from the satellite's current position.
-kepler_interval_time = 0
-previous_sample_x_km = satellite_x_km
-previous_sample_y_km = satellite_y_km
-swept_areas = []
+    orbit_trail = []
+    simulation_time = 0.0
+    previous_angle = math.atan2(
+        satellite_y_km - earth_y_km,
+        satellite_x_km - earth_x_km,
+    )
+    accumulated_angle = 0.0
+    measured_orbital_period = None
+    period_error = None
+    percent_error = None
 
-# Speed changes naturally as gravity accelerates the satellite around Earth.
-initial_speed = calculate_speed(satellite_velocity_x_km_s, satellite_velocity_y_km_s)
-maximum_speed = initial_speed
-minimum_speed = initial_speed
+    kepler_interval_time = 0.0
+    previous_sample_x_km = satellite_x_km
+    previous_sample_y_km = satellite_y_km
+    swept_areas = []
+
+    initial_speed = calculate_speed(
+        satellite_velocity_x_km_s,
+        satellite_velocity_y_km_s,
+    )
+    maximum_speed = initial_speed
+    minimum_speed = initial_speed
+
+
+reset_simulation()
+
+# User interface state does not alter the physics model.
+paused = False
+show_trail = True
+show_hud = True
 
 # -----------------------------
 # Main Game Loop
@@ -181,6 +198,16 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                paused = not paused
+            elif event.key == pygame.K_r:
+                reset_simulation()
+                paused = False
+            elif event.key == pygame.K_t:
+                show_trail = not show_trail
+            elif event.key == pygame.K_h:
+                show_hud = not show_hud
 
     # -----------------------------
     # Calculate Earth-Satellite Distance
@@ -279,13 +306,14 @@ while running:
     # -----------------------------
     # Draw Orbit Trail
     # -----------------------------
-    draw_orbit_trail(
-        screen,
-        earth_screen_x,
-        earth_screen_y,
-        orbit_trail,
-        KM_PER_PIXEL,
-    )
+    if show_trail:
+        draw_orbit_trail(
+            screen,
+            earth_screen_x,
+            earth_screen_y,
+            orbit_trail,
+            KM_PER_PIXEL,
+        )
 
     # -----------------------------
     # Draw Earth
@@ -304,6 +332,20 @@ while running:
         KM_PER_PIXEL,
         SATELLITE_RADIUS,
         SATELLITE_RED,
+    )
+
+    draw_motion_vectors(
+        screen,
+        earth_screen_x,
+        earth_screen_y,
+        satellite_x_km,
+        satellite_y_km,
+        KM_PER_PIXEL,
+        satellite_velocity_x_km_s,
+        satellite_velocity_y_km_s,
+        satellite_acceleration_x_km_s2,
+        satellite_acceleration_y_km_s2,
+        hud_body_font,
     )
 
     # -----------------------------
@@ -325,72 +367,27 @@ while running:
     # -----------------------------
     # Draw Distance Telemetry
     # -----------------------------
-    draw_distance(screen, distance, altitude, font, WHITE)
-    draw_direction(screen, direction_x, direction_y, font, WHITE)
-    draw_velocity(
-        screen,
-        satellite_velocity_x_km_s,
-        satellite_velocity_y_km_s,
-        font,
-        WHITE,
-    )
-    draw_acceleration(
-        screen,
-        satellite_acceleration_x_km_s2,
-        satellite_acceleration_y_km_s2,
-        font,
-        WHITE,
-    )
-    draw_gravity(screen, gravity, font, WHITE)
-    draw_orbital_velocity(screen, orbital_velocity, font, WHITE)
-    draw_escape_telemetry(screen, escape_velocity, orbit_mode, font, WHITE)
-    draw_orbital_energy(
-        screen,
-        specific_energy,
-        orbit_classification,
-        font,
-        WHITE,
-    )
-    draw_distance_stability(
-        screen,
-        minimum_distance,
-        maximum_distance,
-        distance_range,
-        font,
-        WHITE,
-    )
-    draw_orbital_period(screen, initial_orbital_period, font, WHITE)
-    draw_measured_period(screen, measured_orbital_period, percent_error, font, WHITE)
-    draw_orbit_velocity_scale(screen, ORBIT_VELOCITY_SCALE, font, WHITE)
-    draw_orbit_shape(
-        screen,
-        periapsis,
-        apoapsis,
-        semi_major_axis,
-        eccentricity,
-        focus_distance,
-        font,
-        WHITE,
-    )
-    draw_kepler_first_law(screen, font, WHITE)
-    draw_kepler_second_law(
-        screen,
-        KEPLER_AREA_INTERVAL,
-        swept_areas,
-        current_speed,
-        maximum_speed,
-        minimum_speed,
-        font,
-        WHITE,
-    )
-    draw_kepler_third_law(
-        screen,
-        measured_kepler_ratio,
-        theoretical_kepler_ratio,
-        kepler_ratio_error,
-        font,
-        WHITE,
-    )
+    if show_hud:
+        draw_engineering_hud(
+            screen,
+            hud_title_font,
+            hud_body_font,
+            WHITE,
+            altitude,
+            distance,
+            current_speed,
+            orbit_classification,
+            periapsis,
+            apoapsis,
+            semi_major_axis,
+            eccentricity,
+            initial_orbital_period,
+            measured_orbital_period,
+            swept_areas,
+            kepler_ratio_error,
+            simulation_time,
+            paused,
+        )
 
     # -----------------------------
     # Update Display
@@ -401,8 +398,13 @@ while running:
     # Calculate Delta Time
     # -----------------------------
     # clock.tick() returns the time since the previous frame in milliseconds.
+    # Paused frames are rendered but do not advance simulation state.
+    frame_time_ms = clock.tick(FPS)
+    if paused:
+        continue
+
     # Dividing by 1000 converts milliseconds to seconds.
-    dt = clock.tick(FPS) / 1000
+    dt = frame_time_ms / 1000
 
     # -----------------------------
     # Update Satellite Position
