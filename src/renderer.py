@@ -5,10 +5,18 @@ import pygame
 from constants import TRAIL_COLOR
 
 
-def draw_stars(screen, star_coordinates, color):
-    """Draw the fixed star field."""
-    for star in star_coordinates:
-        pygame.draw.circle(screen, color, star, 2)
+def draw_stars(screen, star_field):
+    """Draw stars with mostly dim points and a few softly glowing ones."""
+    for x, y, radius, color, has_glow in star_field:
+        if has_glow:
+            # Dark, colored outer rings give only the brightest stars a glow.
+            glow_color = tuple(max(1, channel // 8) for channel in color)
+            pygame.draw.circle(screen, glow_color, (x, y), radius + 3)
+
+            middle_color = tuple(max(1, channel // 4) for channel in color)
+            pygame.draw.circle(screen, middle_color, (x, y), radius + 1)
+
+        pygame.draw.circle(screen, color, (x, y), radius)
 
 
 def draw_earth(screen, earth_x, earth_y, radius, color):

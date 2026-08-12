@@ -53,7 +53,7 @@ SATELLITE_RADIUS = 6
 # -----------------------------
 # Star Field
 # -----------------------------
-NUMBER_OF_STARS = 200
+NUMBER_OF_STARS = 275
 
 # -----------------------------
 # Orbit Trail

@@ -1,8 +1,8 @@
 import math
+from pathlib import Path
 
 import pygame
 from constants import (
-    EARTH_BLUE,
     EARTH_RADIUS,
     EARTH_RADIUS_KM,
     EARTH_MU,
@@ -17,12 +17,11 @@ from constants import (
     KM_PER_PIXEL,
     ORBIT_VELOCITY_SCALE,
     SATELLITE_RADIUS,
-    SATELLITE_RED,
     SPACE,
     WHITE,
     WIDTH,
 )
-from stars import STAR_COORDINATES
+from stars import STAR_FIELD
 from renderer import (
     draw_acceleration,
     draw_controls_hint,
@@ -30,7 +29,6 @@ from renderer import (
     draw_direction,
     draw_distance,
     draw_distance_stability,
-    draw_earth,
     draw_motion_vectors,
     draw_escape_telemetry,
     draw_orbital_energy,
@@ -45,7 +43,6 @@ from renderer import (
     draw_kepler_second_law,
     draw_kepler_third_law,
     draw_measured_period,
-    draw_satellite,
     draw_stars,
     draw_velocity,
 )
@@ -91,6 +88,30 @@ satellite_label = font.render("Satellite", True, WHITE)
 # -----------------------------
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Operation Aerospace 2026")
+
+
+def load_sprite(file_name, maximum_size):
+    """Load a transparent image, trim empty space, and resize it proportionally."""
+    assets_folder = Path(__file__).resolve().parent.parent / "assets"
+    image = pygame.image.load(assets_folder / file_name).convert_alpha()
+
+    # Generated PNGs have transparent padding around the object. Removing that
+    # padding makes the requested size describe the visible object itself.
+    visible_area = image.get_bounding_rect(min_alpha=1)
+    image = image.subsurface(visible_area).copy()
+
+    max_width, max_height = maximum_size
+    scale = min(max_width / image.get_width(), max_height / image.get_height())
+    new_size = (
+        max(1, round(image.get_width() * scale)),
+        max(1, round(image.get_height() * scale)),
+    )
+    return pygame.transform.smoothscale(image, new_size)
+
+
+# Images are loaded once here, rather than being reloaded during every frame.
+earth_image = load_sprite("earth.png", (EARTH_RADIUS * 2, EARTH_RADIUS * 2))
+satellite_image = load_sprite("satellite.png", (56, 40))
 
 # -----------------------------
 # Simulation Timing
@@ -301,7 +322,7 @@ while running:
     # -----------------------------
     # Draw Star Field
     # -----------------------------
-    draw_stars(screen, STAR_COORDINATES, WHITE)
+    draw_stars(screen, STAR_FIELD)
 
     # -----------------------------
     # Draw Orbit Trail
@@ -318,21 +339,20 @@ while running:
     # -----------------------------
     # Draw Earth
     # -----------------------------
-    draw_earth(screen, earth_screen_x, earth_screen_y, EARTH_RADIUS, EARTH_BLUE)
+    earth_rectangle = earth_image.get_rect(
+        center=(earth_screen_x, earth_screen_y)
+    )
+    screen.blit(earth_image, earth_rectangle)
 
     # -----------------------------
     # Draw Satellite
     # -----------------------------
-    draw_satellite(
-        screen,
-        earth_screen_x,
-        earth_screen_y,
-        satellite_x_km,
-        satellite_y_km,
-        KM_PER_PIXEL,
-        SATELLITE_RADIUS,
-        SATELLITE_RED,
+    satellite_screen_x = earth_screen_x + satellite_x_km / KM_PER_PIXEL
+    satellite_screen_y = earth_screen_y + satellite_y_km / KM_PER_PIXEL
+    satellite_rectangle = satellite_image.get_rect(
+        center=(int(satellite_screen_x), int(satellite_screen_y))
     )
+    screen.blit(satellite_image, satellite_rectangle)
 
     draw_motion_vectors(
         screen,
