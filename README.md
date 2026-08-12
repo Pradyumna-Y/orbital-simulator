@@ -1,170 +1,272 @@
 # Operation Aerospace 2026
 
-## Overview
+Operation Aerospace 2026 is a beginner-friendly orbital mechanics simulator made
+with Python and Pygame. It uses kilometer-based physics to show a satellite
+orbiting Earth while displaying its motion, orbital measurements, and Kepler's
+Laws.
 
-Operation Aerospace 2026 is a Python/Pygame orbital mechanics simulator built to explore how mathematics and Newtonian gravity predict orbital motion. It uses Earth-centered, kilometer-based physics while scaling positions to a Pygame window for visualization.
-
-The project is an educational simulation, not a production flight-dynamics tool. Its goal is to make core orbital mechanics concepts visible, measurable, and testable in code.
-
-## Motivation
-
-I built this project to connect an interest in orbital mechanics with the mathematics behind Kepler's Laws and gravitational motion. The simulator provides a way to see how initial velocity, distance, and inverse-square gravity combine to produce circular, elliptical, and escape trajectories.
+This is an educational simulation rather than a production flight-dynamics
+tool.
 
 ## Features
 
+- Realistic Earth and satellite image sprites
+- Procedurally generated star field with varied brightness and color
 - Inverse-square gravitational acceleration
-- Earth's real standard gravitational parameter
-- Kilometer and second-based physics units
-- Circular-orbit velocity calculation
-- Elliptical orbits from gravity and initial velocity
-- Optional escape-trajectory test mode
+- Earth's standard gravitational parameter in km³/s²
+- Circular, elliptical, and optional escape trajectories
+- Velocity and acceleration vectors
 - Orbital trail visualization
-- Periapsis and apoapsis tracking
-- Eccentricity, semi-major axis, and focus-distance calculations
+- Periapsis, apoapsis, eccentricity, and semi-major axis measurements
 - Theoretical and measured orbital periods
-- Specific orbital energy and bound/escape classification
-- Kepler's First, Second, and Third Law demonstrations
-- Velocity and acceleration vector visualizations
+- Bound-or-escape orbit classification
+- Kepler's First, Second, and Third Law measurements
 - Pause, reset, trail, and HUD controls
 
-## Physics
+## Requirements
 
-The simulator uses Earth's standard gravitational parameter, \(\mu\), rather than a pixel-based gravity constant. For Earth:
-
-\[
-\mu = 398600.4418\ \text{km}^3/\text{s}^2
-\]
-
-Gravitational acceleration magnitude:
-
-\[
-a = \frac{\mu}{r^2}
-\]
-
-Circular orbital velocity:
-
-\[
-v_c = \sqrt{\frac{\mu}{r}}
-\]
-
-Escape velocity:
-
-\[
-v_e = \sqrt{\frac{2\mu}{r}}
-\]
-
-Specific orbital energy:
-
-\[
-\epsilon = \frac{v^2}{2} - \frac{\mu}{r}
-\]
-
-Kepler's Third Law relationship:
-
-\[
-\frac{T^2}{a^3} = \frac{4\pi^2}{\mu}
-\]
-
-Here, \(r\) is distance from Earth's center, \(v\) is speed, \(T\) is orbital period, and \(a\) is the semi-major axis.
-
-## Kepler's Laws
-
-1. **Kepler I — Elliptical orbits:** The simulator calculates periapsis, apoapsis, semi-major axis, eccentricity, and focus distance from the gravity-generated trajectory. Earth remains at the central gravitational focus.
-2. **Kepler II — Equal areas in equal times:** The simulator samples triangle areas swept out over equal simulation-time intervals. It also tracks speed, showing that the satellite moves faster near periapsis and slower near apoapsis.
-3. **Kepler III — Period relationship:** The simulation compares its measured \(T^2/a^3\) ratio with the theoretical value derived from Earth's \(\mu\).
-
-## Validation Results
-
-Representative results obtained during development include:
-
-- Circular orbital period error of approximately **0.04%**
-- Kepler III ratio error of approximately **0.09%**
-- Elliptical-orbit eccentricity of approximately **0.19** in one test
-- Swept-area measurements that remained close despite using a triangle approximation
-
-Exact results can vary slightly with the timestep, initial settings, and numerical accumulation over time.
-
-## Numerical Method
-
-The simulator uses a semi-implicit, or symplectic Euler, update:
-
-\[
-\text{velocity} \leftarrow \text{velocity} + \text{acceleration} \cdot \Delta t
-\]
-
-\[
-\text{position} \leftarrow \text{position} + \text{velocity} \cdot \Delta t
-\]
-
-Velocity is updated first, then the updated velocity is used to update position. Numerical simulations approximate continuous motion with small time steps, so small measurement and energy errors are expected.
-
-## Architecture
-
-The project is divided into small modules to separate application control, physics, and visualization:
-
-- `main.py` — Coordinates the program loop, controls, state, telemetry, and module calls
-- `constants.py` — Stores physical constants, rendering scale, colors, and configuration values
-- `simulation.py` — Contains orbital calculations, gravity, numerical updates, and Kepler-law measurements
-- `renderer.py` — Draws Earth, the satellite, vectors, trails, labels, and the engineering HUD
-- `stars.py` — Creates the fixed procedural star field used as the background
-
-Physics positions are stored in kilometers relative to Earth. The renderer converts those values to pixels only when drawing.
-
-## Controls
-
-| Key | Action |
-| --- | --- |
-| `SPACE` | Pause / Resume |
-| `R` | Reset the simulation and analysis measurements |
-| `T` | Toggle the orbital trail |
-| `H` | Toggle the HUD |
-
-## Installation
-
-Requirements:
+You need:
 
 - Python 3.10 or newer
-- Pygame
+- Pygame 2.5 or newer
+- A terminal such as PowerShell, Command Prompt, Terminal, or the VS Code
+  terminal
 
-Clone or download this repository, open a terminal in the project folder, and install Pygame:
+Git is optional. You only need it if you want to clone the repository instead of
+downloading it as a ZIP file.
 
-```powershell
-py -m pip install pygame
+## Download the project
+
+Either clone the repository with Git:
+
+```bash
+git clone https://github.com/Pradyumna-Y/orbital-simulator.git
+cd orbital-simulator
 ```
 
-If the `py` launcher is unavailable, use:
+Or download the repository as a ZIP file and extract it.
+
+Afterward, open a terminal in the `Orbital-Simulator` folder. This is the project
+root—the folder containing `README.md`, `requirements.txt`, `assets`, and `src`.
+
+## Setup on Windows
+
+Check that Python is installed:
 
 ```powershell
-python -m pip install pygame
+py --version
 ```
 
-## Running
+Create a virtual environment:
 
-From the project root, start the simulator with:
+```powershell
+py -m venv .venv
+```
+
+Activate it in PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks the activation script, allow it for the current terminal
+session and try again:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Install the project dependency:
+
+```powershell
+py -m pip install -r requirements.txt
+```
+
+Run the simulator:
 
 ```powershell
 py src\main.py
 ```
 
-Or:
+If the `py` launcher is unavailable, replace `py` with `python` in each command.
+
+## Setup on macOS or Linux
+
+Check that Python is installed:
+
+```bash
+python3 --version
+```
+
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install the project dependency:
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+Run the simulator:
+
+```bash
+python3 src/main.py
+```
+
+## Quick setup without a virtual environment
+
+A virtual environment is recommended because it keeps project packages separate,
+but the simulator can also be run with:
 
 ```powershell
+python -m pip install -r requirements.txt
 python src\main.py
 ```
 
-## What I Learned
+On macOS or Linux, use `python3` and `src/main.py` instead.
 
-- Vectors, direction, and component-based motion
-- Inverse-square gravity and gravitational acceleration
-- Circular and escape velocity calculations
-- Numerical integration and timestep-related error
-- Validating a simulation against theoretical orbital relationships
-- Modular software design that separates physics, rendering, constants, and program control
+## Controls
 
-## Future Work
+| Key | Action |
+| --- | --- |
+| `SPACE` | Pause or resume the simulation |
+| `R` | Reset the orbit and all measurements |
+| `T` | Show or hide the orbital trail |
+| `H` | Show or hide the engineering HUD |
+| Window close button | Exit the simulator |
+
+## Project structure
+
+```text
+Orbital-Simulator/
+├── assets/
+│   ├── earth.png            # Transparent Earth sprite
+│   └── satellite.png        # Transparent satellite sprite
+├── src/
+│   ├── main.py              # Small program entry point
+│   ├── application.py       # Pygame setup, controls, drawing, and main loop
+│   ├── assets.py            # Image loading and proportional resizing
+│   ├── simulation_state.py  # Changing orbit state and measurements
+│   ├── simulation.py        # Reusable physics calculations
+│   ├── renderer.py          # Drawing functions and engineering HUD
+│   ├── constants.py         # Physics and display configuration
+│   └── stars.py             # Procedural star-field generation
+├── requirements.txt         # Python package requirements
+└── README.md
+```
+
+The program starts in `main.py`. That file creates an `OrbitalSimulator` from
+`application.py`. The application handles input and drawing, while
+`SimulationState` stores and updates the orbit. The formulas themselves remain
+in `simulation.py`, making each module responsible for one main job.
+
+## Changing simulation settings
+
+Beginner-friendly settings are stored in `src/constants.py`. Stop the simulator,
+change a value, save the file, and start the program again.
+
+Useful settings include:
+
+- `FPS` — target frames per second
+- `INITIAL_ORBIT_RADIUS_KM` — starting distance from Earth's center
+- `KM_PER_PIXEL` — visual zoom level
+- `ORBIT_VELOCITY_SCALE` — starting speed relative to circular-orbit speed
+- `ESCAPE_TEST_MODE` — change to `True` to test an escape trajectory
+- `NUMBER_OF_STARS` — number of background stars
+
+Physics positions use kilometers. `KM_PER_PIXEL` changes only how those positions
+are displayed on screen.
+
+## Physics used
+
+Earth's standard gravitational parameter is:
+
+$$
+\mu = 398600.4418\ \text{km}^3/\text{s}^2
+$$
+
+Gravitational acceleration:
+
+$$
+a = \frac{\mu}{r^2}
+$$
+
+Circular orbital velocity:
+
+$$
+v_c = \sqrt{\frac{\mu}{r}}
+$$
+
+Escape velocity:
+
+$$
+v_e = \sqrt{\frac{2\mu}{r}}
+$$
+
+Specific orbital energy:
+
+$$
+\epsilon = \frac{v^2}{2} - \frac{\mu}{r}
+$$
+
+The simulator uses semi-implicit Euler integration. It updates velocity first and
+then uses the new velocity to update position. Small numerical errors are normal
+because the program approximates continuous motion with individual time steps.
+
+## Troubleshooting
+
+### `No module named pygame`
+
+Install the requirements using the same Python command used to start the project:
+
+```powershell
+python -m pip install -r requirements.txt
+python src\main.py
+```
+
+### `python` or `py` is not recognized
+
+Install Python 3 from the official Python website, then close and reopen the
+terminal. On Windows, make sure the installer option to add Python to `PATH` is
+enabled.
+
+### PowerShell will not activate `.venv`
+
+Run this once in the current PowerShell window:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+Then activate the environment again.
+
+### An image cannot be loaded
+
+Make sure `assets/earth.png` and `assets/satellite.png` are still inside the
+project. Keep the project folders together rather than copying only `main.py`.
+
+### The window opens and immediately closes
+
+Run the project from a terminal instead of double-clicking `main.py`. The terminal
+will remain visible and show the error message that needs to be fixed.
+
+## Exiting the virtual environment
+
+When you finish working with the project, enter:
+
+```text
+deactivate
+```
+
+## Possible future improvements
 
 - Earth-Moon system
 - Multiple satellites
-- Improved numerical integrators such as Velocity Verlet
-- Adjustable orbital parameters
-- More advanced mission visualization
+- Adjustable orbital parameters in the window
+- Velocity Verlet or another higher-accuracy numerical integrator
+- Additional mission-planning visualizations
